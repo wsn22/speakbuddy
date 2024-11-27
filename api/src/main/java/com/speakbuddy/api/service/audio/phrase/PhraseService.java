@@ -21,6 +21,9 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+
 import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.apache.commons.io.FilenameUtils.getExtension;
 
@@ -50,7 +53,8 @@ public class PhraseService {
     // assume that user already authenticated and rate limiter is
     final String destinationPath = fileUtility.storeFile(audioFile, path, fileName);
 
-    //TODO: transform audio file
+    //TODO: transform audio file https://docs.oracle.com/javase/tutorial/sound/converters.html
+
 
     // do upsert to database
     phraseManager.upsert(new PhraseIds(userId, phraseId), destinationPath);
