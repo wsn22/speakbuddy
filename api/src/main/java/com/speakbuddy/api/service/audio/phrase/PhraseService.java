@@ -7,8 +7,9 @@ import com.speakbuddy.api.database.repository.entity.ids.PhraseIds;
 import com.speakbuddy.api.exception.BadRequestException;
 import com.speakbuddy.api.exception.FileProcessorException;
 import com.speakbuddy.api.exception.InternalServerError;
-import com.speakbuddy.api.utility.AudioConverter;
+import com.speakbuddy.api.utility.AudioProcessor;
 import com.speakbuddy.api.utility.FileUtility;
+import com.speakbuddy.api.utility.audio_processor.AudioProcessorMapper;
 import com.speakbuddy.api.utility.impl.LocalFileProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -20,17 +21,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 
-import javax.print.attribute.standard.Media;
 import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -44,51 +42,46 @@ public class PhraseService {
 
   private final PhraseManager phraseManager;
   private final FileUtility fileUtility;
+  private final AudioProcessorMapper audioProcessorMapper;
 
   public PhraseService(PhraseManager phraseManager) {
     this.phraseManager = phraseManager;
     this.fileUtility = new LocalFileProcessor("audio");
+    this.audioProcessorMapper = new AudioProcessorMapper();
   }
 
-
+  // get file wav/aiff, and save as wav
   public ResponseEntity<SimpleResponse> savePhrase(String userId, String phraseId, MultipartFile audioFile) {
     log.info("[save phrase] saving phrase by user-id: {} phrase-id: {}", userId, phraseId);
-    if (!isFileTypeAllowed(audioFile.getOriginalFilename())) {
+    if (!isFileTypeAllowed(getExtension(audioFile.getOriginalFilename()))) {
       log.warn("[save phrase] requested filename: {}", audioFile.getOriginalFilename());
       throw new BadRequestException("File type not supported");
     }
 
-    final var fileName = String.format("%s.%s", Instant.now().toEpochMilli(), FilenameUtils.getExtension(audioFile.getOriginalFilename()));
-    final var targetFileName = String.format("%s.%s", Instant.now().toEpochMilli(), "wav");
-    final File tempFile = new File("/Users/wicaksno/code/speakbuddy/wisnu/temp/" + fileName);
+    final AudioProcessor audioProcessor = audioProcessorMapper.getAudioProcessor("wav");
 
+    final Instant instant = Instant.now();
+    
+    final File tempFile = saveTempFile(String.valueOf(instant.toEpochMilli()), audioFile);
+
+    final String targetFileName = String.format("%s.%s", instant.toEpochMilli(), "wav");
+    final String destinationPath = constructDirectory(userId, phraseId);
+
+    final File destinationFile;
     try {
-      audioFile.transferTo(tempFile);
+      destinationFile = fileUtility.storeFile(destinationPath, targetFileName);
+      audioProcessor.convert(new FileOutputStream(destinationFile), tempFile);
     } catch (IOException e) {
-      log.error("Error saving file to temp", e);
-      throw new FileProcessorException("Error saving file to temp");
+      throw new FileProcessorException("File not found");
     }
 
-    final var path = constructDirectory(userId, phraseId);
-
-    final boolean isSupported = new AudioConverter().isCompatible(tempFile);
-
-    System.out.println("isSupported: " + isSupported);
-
-    // assume that user already authenticated and rate limiter is
-    final String destinationPath = fileUtility.storeFile(tempFile, path, targetFileName);
-
-    //TODO: transform audio file https://docs.oracle.com/javase/tutorial/sound/converters.html
-
-
-    // do upsert to database
-    phraseManager.upsert(new PhraseIds(userId, phraseId), destinationPath);
+    phraseManager.upsert(new PhraseIds(userId, phraseId), destinationFile.getPath());
 
     return ResponseEntity.ok(new SimpleResponse("File successfully saved"));
   }
 
   public ResponseEntity<StreamingResponseBody> getPhrase(String userId, String phraseId, String audioFormat) {
-    if (!List.of("aiff", "au").contains(audioFormat)) {
+    if (!isFileTypeAllowed(audioFormat)) {
       throw new BadRequestException("Audio file format not supported yet");
     }
 
@@ -99,8 +92,10 @@ public class PhraseService {
 
     final File myAudioFile = Paths.get("..", "audio", existPhraseEntity.getFilePath()).toFile();
 
-    final StreamingResponseBody responseBody = outputStream -> this.handleStreamingResponse(outputStream, myAudioFile);
+    AudioProcessor processor = audioProcessorMapper.getAudioProcessor(audioFormat);
 
+    final StreamingResponseBody responseBody = outputStream -> processor.convert(outputStream, myAudioFile);
+    
     final String headerValue = String.format("attachment; filename=%s.%s", fileNameWithoutExtension, audioFormat);
 
     return ResponseEntity.ok()
@@ -275,7 +270,18 @@ public class PhraseService {
   }
 
   private boolean isFileTypeAllowed(String fileName) {
-    return List.of("wav", "aiff").contains(getExtension(fileName));
+    return List.of("wav", "aiff").contains(fileName);
+  }
+
+  private File saveTempFile(String fileName, MultipartFile audioFile) {
+    try {
+      final var tempFilename = String.format("%s.%s", fileName, FilenameUtils.getExtension(audioFile.getOriginalFilename()));
+      final File tempFile = new File("/Users/wicaksno/code/speakbuddy/wisnu/temp/" + tempFilename);
+      audioFile.transferTo(tempFile);
+      return tempFile;
+    } catch (IOException e) {
+      throw new FileProcessorException("Error save temporary file");
+    }
   }
 
 }

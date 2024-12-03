@@ -4,6 +4,8 @@ import com.speakbuddy.api.database.repository.PhraseRepository;
 import com.speakbuddy.api.database.repository.entity.PhraseEntity;
 import com.speakbuddy.api.database.repository.entity.ids.PhraseIds;
 import com.speakbuddy.api.exception.EntityNotFoundException;
+import com.speakbuddy.api.utility.FileUtility;
+import com.speakbuddy.api.utility.impl.LocalFileProcessor;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -11,9 +13,11 @@ import java.util.Optional;
 @Component
 public class PhraseManager {
   private final PhraseRepository phraseRepository;
+  private final FileUtility fileUtility;
 
   public PhraseManager(PhraseRepository phraseRepository) {
     this.phraseRepository = phraseRepository;
+    this.fileUtility = new LocalFileProcessor();
   }
 
   public PhraseEntity findById(PhraseIds id) {
@@ -36,6 +40,8 @@ public class PhraseManager {
           .filePath(path)
           .build());
     }
+
+    fileUtility.deleteFile(existData.get().getFilePath());
 
     final PhraseEntity updatedEntity = existData.get();
     updatedEntity.setFilePath(path);

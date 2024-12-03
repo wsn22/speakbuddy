@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public interface FileUtility {
-  String storeFile(File file, String targetPath, String targetFileName);
+  File storeFile(String targetPath, String targetFileName);
   InputStream getFile(String filePath) throws IOException;
+  void deleteFile(String filePath);
 }
