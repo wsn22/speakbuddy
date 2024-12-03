@@ -22,6 +22,8 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import static javax.sound.sampled.AudioSystem.isConversionSupported;
+
 @Slf4j
 public class LocalFileProcessor implements FileUtility {
 
@@ -32,10 +34,11 @@ public class LocalFileProcessor implements FileUtility {
   }
 
   @Override
-  public String storeFile(MultipartFile file, String targetPath, String targetFileName) {
-    if (file.isEmpty()) {
-      throw new BadRequestException("File is empty.");
-    }
+  public String storeFile(File file, String targetPath, String targetFileName) {
+    //System.out.println(file.getAbsoluteFile());
+    //if (file.isFile()) {
+    //  throw new BadRequestException("File is not exists.");
+    //}
 
     final String aliasPath = String.format("%s/%s", targetPath, targetFileName);
     final Path destinationPath = Paths.get("..", relativePath, targetPath).normalize();
@@ -49,24 +52,23 @@ public class LocalFileProcessor implements FileUtility {
 
     File outputFile = destinationPath.resolve(targetFileName).toFile();
 
-    try (InputStream inputStream = file.getInputStream();
-         BufferedInputStream bis = new BufferedInputStream(inputStream);
-         AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(bis)) {
+    try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file)) {
 
       //audioInputStream.reset();
       //AudioFileFormat hehehe = AudioSystem.getAudioFileFormat(file.getInputStream());
       //System.out.println(hehehe.getType());
 
       AudioFormat sourceFormat = audioInputStream.getFormat();
+      System.out.println(sourceFormat);
       AudioFormat targetFormat = new AudioFormat(
-          AudioFormat.Encoding.PCM_SIGNED,
-          sourceFormat.getSampleRate(),
-          16,
-          sourceFormat.getChannels(),
-          sourceFormat.getChannels() * 2,
-          sourceFormat.getSampleRate(),
+          (float) 8000.0,
+          8,
+          1,
+          true,
           false
       );
+
+      isConversionSupported(targetFormat, sourceFormat);
 
       try (AudioInputStream wavStream = AudioSystem.getAudioInputStream(targetFormat, audioInputStream)) {
         AudioSystem.write(wavStream, AudioFileFormat.Type.WAVE, outputFile);

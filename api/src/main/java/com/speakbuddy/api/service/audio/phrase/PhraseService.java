@@ -7,6 +7,7 @@ import com.speakbuddy.api.database.repository.entity.ids.PhraseIds;
 import com.speakbuddy.api.exception.BadRequestException;
 import com.speakbuddy.api.exception.FileProcessorException;
 import com.speakbuddy.api.exception.InternalServerError;
+import com.speakbuddy.api.utility.AudioConverter;
 import com.speakbuddy.api.utility.FileUtility;
 import com.speakbuddy.api.utility.impl.LocalFileProcessor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,11 +58,25 @@ public class PhraseService {
       throw new BadRequestException("File type not supported");
     }
 
-    final var path = constructDirectory(userId, phraseId);
     final var fileName = String.format("%s.%s", Instant.now().toEpochMilli(), FilenameUtils.getExtension(audioFile.getOriginalFilename()));
+    final var targetFileName = String.format("%s.%s", Instant.now().toEpochMilli(), "wav");
+    final File tempFile = new File("/Users/wicaksno/code/speakbuddy/wisnu/temp/" + fileName);
+
+    try {
+      audioFile.transferTo(tempFile);
+    } catch (IOException e) {
+      log.error("Error saving file to temp", e);
+      throw new FileProcessorException("Error saving file to temp");
+    }
+
+    final var path = constructDirectory(userId, phraseId);
+
+    final boolean isSupported = new AudioConverter().isCompatible(tempFile);
+
+    System.out.println("isSupported: " + isSupported);
 
     // assume that user already authenticated and rate limiter is
-    final String destinationPath = fileUtility.storeFile(audioFile, path, fileName);
+    final String destinationPath = fileUtility.storeFile(tempFile, path, targetFileName);
 
     //TODO: transform audio file https://docs.oracle.com/javase/tutorial/sound/converters.html
 
@@ -260,7 +275,7 @@ public class PhraseService {
   }
 
   private boolean isFileTypeAllowed(String fileName) {
-    return List.of("wav", "m4a").contains(getExtension(fileName));
+    return List.of("wav", "aiff").contains(getExtension(fileName));
   }
 
 }
