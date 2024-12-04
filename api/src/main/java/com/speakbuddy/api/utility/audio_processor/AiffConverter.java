@@ -16,11 +16,11 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 @Slf4j
 public class AiffConverter implements AudioProcessor {
 
-    public boolean isCompatible(File file) {
+  public boolean isCompatible(File file) {
     try {
       AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(file);
       AudioFileFormat.Type fileType = fileFormat.getType();
-      
+
       try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file)) {
         audioInputStream.reset();
         return AudioSystem.isFileTypeSupported(fileType, audioInputStream);
@@ -37,11 +37,24 @@ public class AiffConverter implements AudioProcessor {
   }
 
   @Override
-  public void convert(OutputStream outputStream, File file) {
+  public void convert(File inputFile, OutputStream outputStream) {
+    convert(inputFile, null, outputStream);
+  }
+
+  @Override
+  public void convert(File inputFile, File outputFile) {
+    convert(inputFile, outputFile, null);
+  }
+
+  public void convert(File file, File outputFile, OutputStream outputStream) {
     try (AudioInputStream originalStream = AudioSystem.getAudioInputStream(file)) {
       originalStream.reset();
-      AudioSystem.write(originalStream, AudioFileFormat.Type.AIFF, outputStream);
-      outputStream.flush();
+      if (outputFile != null) {
+        AudioSystem.write(originalStream, AudioFileFormat.Type.WAVE, outputFile);
+      } else if (outputStream != null) {
+        AudioSystem.write(originalStream, AudioFileFormat.Type.AIFF, outputStream);
+        outputStream.flush();
+      }
     } catch (UnsupportedAudioFileException e) {
       log.error("UnsupportedAudioFileException. file: {}. err: {}", file.getAbsoluteFile(), e.getMessage(), e);
       throw new InternalServerError("Audio file not supported");

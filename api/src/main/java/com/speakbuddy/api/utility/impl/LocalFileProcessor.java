@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,12 +29,13 @@ public class LocalFileProcessor implements FileUtility {
     final Path destinationPath = Paths.get("..", relativePath, targetPath).normalize();
 
     try {
+
       Files.createDirectories(destinationPath.toAbsolutePath());
       final File outputFile = destinationPath.resolve(targetFileName).toFile();
       if (outputFile.createNewFile()) {
         return outputFile;
       }
-      
+
     } catch (IOException e) {
       log.error("[storeFile] create directory fail", e);
       throw new FileProcessorException("Directory creation failed");
@@ -45,10 +45,13 @@ public class LocalFileProcessor implements FileUtility {
   }
 
   @Override
-  public InputStream getFile(String filePath) throws IOException {
+  public File getFile(String filePath) {
     final Path destinationPath = Paths.get("..", relativePath, filePath).normalize().toAbsolutePath();
-
-    return Files.newInputStream(destinationPath);
+    if (!destinationPath.toFile().exists()) {
+      log.warn("File {} not found", destinationPath);
+      throw new FileProcessorException("Requested file not found");
+    }
+    return destinationPath.toFile();
   }
 
   @Override

@@ -40,8 +40,16 @@ public class WavConverter implements AudioProcessor {
   }
 
   @Override
-  public void convert(OutputStream outputStream, File file) {
-    // converter not worked when I need too .write to outputStream
+  public void convert(File inputFile, OutputStream outputStream) {
+    convert(inputFile, null, outputStream);
+  }
+
+  @Override
+  public void convert(File inputFile, File outputFile) {
+    convert(inputFile, outputFile, null);
+  }
+
+  private void convert(File file, File outputFile, OutputStream outputStream) {
     final AudioFormat targetFormat = new AudioFormat(
         (float) 8000.0,
         8,
@@ -50,14 +58,19 @@ public class WavConverter implements AudioProcessor {
         false
     );
 
-    File outputFile = new File("/Users/wicaksno/code/speakbuddy/wisnu/temp/output.wav");
 
     try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file);
          AudioInputStream convertedAudioStream = AudioSystem.getAudioInputStream(targetFormat, audioInputStream)) {
       AudioFormat sourceFormat = audioInputStream.getFormat();
       log.info("isConversionSupported: {}", isConversionSupported(targetFormat, sourceFormat));
-      AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, outputStream);
-      outputStream.flush();
+
+      if (outputFile != null) {
+        AudioSystem.write(convertedAudioStream, AudioFileFormat.Type.WAVE, outputFile);
+      } else if (outputStream != null) {
+        AudioSystem.write(convertedAudioStream, AudioFileFormat.Type.WAVE, outputStream);
+        outputStream.flush();
+      }
+
 
     } catch (UnsupportedAudioFileException e) {
       log.error("UnsupportedAudioFileException. file: {}. err: {}", file.getAbsoluteFile(), e.getMessage(), e);
