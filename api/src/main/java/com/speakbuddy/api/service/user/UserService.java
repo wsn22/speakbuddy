@@ -7,7 +7,6 @@ import com.speakbuddy.api.database.manager.UserManager;
 import com.speakbuddy.api.database.repository.entity.UserEntity;
 import com.speakbuddy.api.exception.BadRequestException;
 import com.speakbuddy.api.exception.EntityNotFoundException;
-import com.speakbuddy.api.exception.NotFoundException;
 import com.speakbuddy.api.transformer.UserTransformer;
 import org.springframework.data.domain.Example;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +22,14 @@ public class UserService {
     this.userManager = userManager;
   }
 
+  /**
+   * Create new user
+   *
+   * @param userRequest user request
+   * @return create user response
+   */
   public ResponseEntity<CreateUserResponse> createUser(CreateUserRequest userRequest) {
-    Optional<UserEntity> existsUsers = userManager.findBy(Example.of(UserEntity.builder().username(userRequest.getUsername()).build()));
+    final Optional<UserEntity> existsUsers = userManager.findBy(Example.of(UserEntity.builder().username(userRequest.getUsername()).build()));
 
     if (existsUsers.isPresent()) {
       throw new BadRequestException("User already exists");
@@ -35,6 +40,12 @@ public class UserService {
     return ResponseEntity.ok(UserTransformer.toCreateUserResponse(newUser));
   }
 
+  /**
+   * Get user detail by id
+   *
+   * @param idUser user id
+   * @return user detail response
+   */
   public ResponseEntity<UserDetailResponse> getUserDetail(String idUser) {
     Optional<UserEntity> existsUser = userManager.findById(idUser);
 
