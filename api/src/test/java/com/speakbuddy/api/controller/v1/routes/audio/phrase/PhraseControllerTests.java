@@ -8,9 +8,16 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.util.ResourceUtils;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Files;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -30,14 +37,37 @@ class PhraseControllerTests {
 
   @Test
   void testGetPhrase() throws Exception {
-    when(phraseService.getPhrase(any(), any(), any())).thenReturn(new ResponseEntity<>(HttpStatus.OK));
+    final File mockFile = ResourceUtils.getFile("classpath:controller/v1/routes/audio/phrase/success.wav");
+    final StreamingResponseBody mockResponse = outputStream -> Files.copy(mockFile.toPath(), outputStream);
 
-    mockMvc.perform(MockMvcRequestBuilders
-            .get("/audio/user/user-id-test/phrase/phrase-id-test/aiff"))
+    when(phraseService.getPhrase(any(), any(), any())).thenReturn(ResponseEntity.ok(mockResponse));
+
+    final var actual = mockMvc.perform(MockMvcRequestBuilders
+            .get("/audio/user/user-id-test/phrase/phrase-id-test/wav"))
         .andExpectAll(
             status().isOk()
         );
 
-    verify(phraseService).getPhrase("user-id-test", "phrase-id-test", "aiff");
+    // should make sure the file is same
+    //assertArrayEquals(Files.readAllBytes(mockFile.toPath()), actual.andReturn().getResponse().getContentAsByteArray());
+    verify(phraseService).getPhrase("user-id-test", "phrase-id-test", "wav");
   }
+
+  @Test
+  void testPostPhrase() throws Exception {
+    when(phraseService.getPhrase(any(), any(), any())).thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+    final File mockFile = ResourceUtils.getFile("classpath:controller/v1/routes/audio/phrase/success.wav");
+    final MockMultipartFile mockMultipartFile = new MockMultipartFile("file", "filename.txt", "audio/wav", new FileInputStream(mockFile));
+
+    mockMvc.perform(MockMvcRequestBuilders
+            .multipart("/audio/user/user-id-test/phrase/phrase-id-test")
+            .file(mockMultipartFile))
+        .andExpectAll(
+            status().isOk()
+        );
+
+    verify(phraseService).savePhrase("user-id-test", "phrase-id-test", mockMultipartFile);
+  }
+
 }

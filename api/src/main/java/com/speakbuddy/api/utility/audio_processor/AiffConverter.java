@@ -1,6 +1,5 @@
 package com.speakbuddy.api.utility.audio_processor;
 
-import com.speakbuddy.api.exception.FileProcessorException;
 import com.speakbuddy.api.exception.InternalServerError;
 import com.speakbuddy.api.utility.AudioProcessor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,26 +14,6 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 @Slf4j
 public class AiffConverter implements AudioProcessor {
-
-  public boolean isCompatible(File file) {
-    try {
-      AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(file);
-      AudioFileFormat.Type fileType = fileFormat.getType();
-
-      try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file)) {
-        audioInputStream.reset();
-        return AudioSystem.isFileTypeSupported(fileType, audioInputStream);
-      }
-
-
-    } catch (UnsupportedAudioFileException e) {
-      log.error("Error processing audio file", e);
-      throw new FileProcessorException("Error file creation. Err: " + e.getMessage());
-    } catch (IOException e) {
-      log.error("huee", e);
-      throw new FileProcessorException("Error read audio file. Err: " + e.getMessage());
-    }
-  }
 
   @Override
   public void convert(File inputFile, OutputStream outputStream) {

@@ -1,6 +1,5 @@
 package com.speakbuddy.api.utility.audio_processor;
 
-import com.speakbuddy.api.exception.FileProcessorException;
 import com.speakbuddy.api.exception.InternalServerError;
 import com.speakbuddy.api.utility.AudioProcessor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,26 +17,6 @@ import static javax.sound.sampled.AudioSystem.isConversionSupported;
 
 @Slf4j
 public class WavConverter implements AudioProcessor {
-
-  public boolean isCompatible(File file) {
-    try {
-      AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(file);
-      AudioFileFormat.Type fileType = fileFormat.getType();
-
-      try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file)) {
-        audioInputStream.reset();
-        return AudioSystem.isFileTypeSupported(fileType, audioInputStream);
-      }
-
-
-    } catch (UnsupportedAudioFileException e) {
-      log.error("Error processing audio file", e);
-      throw new FileProcessorException("Error file creation. Err: " + e.getMessage());
-    } catch (IOException e) {
-      log.error("huee", e);
-      throw new FileProcessorException("Error read audio file. Err: " + e.getMessage());
-    }
-  }
 
   @Override
   public void convert(File inputFile, OutputStream outputStream) {
@@ -58,7 +37,6 @@ public class WavConverter implements AudioProcessor {
         false
     );
 
-
     try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file);
          AudioInputStream convertedAudioStream = AudioSystem.getAudioInputStream(targetFormat, audioInputStream)) {
       AudioFormat sourceFormat = audioInputStream.getFormat();
@@ -70,7 +48,6 @@ public class WavConverter implements AudioProcessor {
         AudioSystem.write(convertedAudioStream, AudioFileFormat.Type.WAVE, outputStream);
         outputStream.flush();
       }
-
 
     } catch (UnsupportedAudioFileException e) {
       log.error("UnsupportedAudioFileException. file: {}. err: {}", file.getAbsoluteFile(), e.getMessage(), e);

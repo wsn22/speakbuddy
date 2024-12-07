@@ -10,6 +10,10 @@ dependencies {
 //  implementation 'org.springframework.boot:spring-boot-starter-security'
   implementation 'org.springframework.boot:spring-boot-starter-web'
   implementation 'commons-io:commons-io:2.18.0'
+
+  implementation(platform("software.amazon.awssdk:bom:2.27.21"))
+  implementation("software.amazon.awssdk:s3")
+
   compileOnly 'org.projectlombok:lombok'
   runtimeOnly 'org.postgresql:postgresql'
 

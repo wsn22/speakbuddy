@@ -4,6 +4,7 @@ import com.speakbuddy.api.exception.EntityNotFoundException;
 import com.speakbuddy.api.exception.FileProcessorException;
 import com.speakbuddy.api.utility.FileUtility;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,21 +13,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Slf4j
+@Component
 public class LocalFileProcessor implements FileUtility {
-
-  private final String relativePath;
-
-  public LocalFileProcessor() {
-    this.relativePath = "files";
-  }
-
-  public LocalFileProcessor(String relativePath) {
-    this.relativePath = relativePath;
-  }
 
   @Override
   public File storeFile(String targetPath, String targetFileName) {
-    final Path destinationPath = Paths.get("..", relativePath, targetPath).normalize();
+    final String rootPath = "files";
+    final Path destinationPath = Paths.get("..", rootPath, targetPath).normalize();
 
     try {
 
@@ -46,17 +39,17 @@ public class LocalFileProcessor implements FileUtility {
 
   @Override
   public File getFile(String filePath) {
-    final Path destinationPath = Paths.get("..", relativePath, filePath).normalize().toAbsolutePath();
-    if (!destinationPath.toFile().exists()) {
-      log.warn("File {} not found", destinationPath);
+    final File destinationFile = new File(filePath);
+    if (!destinationFile.exists()) {
+      log.warn("File {} not found", destinationFile);
       throw new FileProcessorException("Requested file not found");
     }
-    return destinationPath.toFile();
+    return destinationFile;
   }
 
   @Override
   public void deleteFile(String filePath) {
-    final File targetFile = Paths.get("..", relativePath, filePath).normalize().toAbsolutePath().toFile();
+    final File targetFile = Paths.get("..", filePath).normalize().toAbsolutePath().toFile();
 
     if (!targetFile.exists()) {
       throw new EntityNotFoundException("File not found");

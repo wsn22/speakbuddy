@@ -4,7 +4,6 @@ import com.speakbuddy.api.controller.v1.response.SimpleResponse;
 import com.speakbuddy.api.database.manager.PhraseManager;
 import com.speakbuddy.api.database.repository.entity.PhraseEntity;
 import com.speakbuddy.api.database.repository.entity.ids.PhraseIds;
-import com.speakbuddy.api.utility.AudioProcessor;
 import com.speakbuddy.api.utility.audio_processor.AudioProcessorMapper;
 import com.speakbuddy.api.utility.impl.LocalFileProcessor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,9 @@ public class PhraseService extends BasePhraseService {
 
   private final PhraseManager phraseManager;
 
-  public PhraseService(PhraseManager phraseManager) {
+  public PhraseService(PhraseManager phraseManager,
+                       LocalFileProcessor localFileProcessor) {
+    super(localFileProcessor, new AudioProcessorMapper());
     this.phraseManager = phraseManager;
   }
 
@@ -44,9 +45,10 @@ public class PhraseService extends BasePhraseService {
     final File tempFile = saveTempFile(
         String.format("%s.%s", currentTime.toEpochMilli(), FilenameUtils.getExtension(audioFile.getOriginalFilename())), audioFile);
 
-    final File savedFile = saveFile(tempFile, String.format("%s.%s", currentTime.toEpochMilli(), "wav"), userId, phraseId);
+    final File savedFile = convertAndSaveFile(tempFile, String.format("%s.%s", currentTime.toEpochMilli(), "wav"), userId, phraseId);
 
-    phraseManager.upsert(new PhraseIds(userId, phraseId), savedFile.getPath());
+    phraseManager.upsert(new PhraseIds(userId, phraseId),
+        Paths.get(savedFile.getAbsolutePath()).normalize().toAbsolutePath().toString());
 
     return ResponseEntity.ok(new SimpleResponse("File successfully saved"));
   }
@@ -61,11 +63,7 @@ public class PhraseService extends BasePhraseService {
     final String fileName = Paths.get(existPhraseEntity.getFilePath()).getFileName().toString();
     final String fileNameWithoutExtension = getBaseName(fileName);
 
-    final File myAudioFile = new LocalFileProcessor("audio").getFile(existPhraseEntity.getFilePath());
-
-    final AudioProcessor processor = new AudioProcessorMapper().getAudioProcessor(audioFormat);
-
-    final StreamingResponseBody responseBody = outputStream -> processor.convert(myAudioFile, outputStream);
+    final StreamingResponseBody responseBody = getStreamingResponseBody(existPhraseEntity.getFilePath(), audioFormat);
 
     final String headerValue = String.format("attachment; filename=%s.%s", fileNameWithoutExtension, audioFormat);
 
