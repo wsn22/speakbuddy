@@ -38,12 +38,15 @@ docker-compose down
 ```
 
 ### What can be improved
-Find out howto simplify audio converter so it become more modular
+
+Add more layer between controller and service layer for finer control.
+
+Find out howto simplify audio converter so it become more modular.
 
 Cleaning out temp files. If we don't use any storage with lifecycle control,
 then I think we should create another java app (to have better control and logging)
 to clean out temp files without adding latency to main app.
 
-Adding integration test for audio converter and audio storage.
+Adding integration test for audio converter and audio storage using testcontainers.
 
 Wider control for ControllerAdvisor. Need to expand exception to have better control of error message.
