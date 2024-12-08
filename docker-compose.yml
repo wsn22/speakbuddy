@@ -1,20 +1,27 @@
 services:
   app:
-    image: 'docker.io/library/api:latest'
     build:
       context: .
     container_name: app
     depends_on:
       - db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/compose-postgres
-      - SPRING_DATASOURCE_USERNAME=compose-postgres
-      - SPRING_DATASOURCE_PASSWORD=compose-postgres
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/speakbuddy
+      - SPRING_DATASOURCE_USERNAME=user-postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres-password-dummy
     ports:
       - "8080:8080"
+    volumes:
+      - ./files:/files
   db:
     image: 'postgres:14.15-alpine3.20'
     container_name: db
     environment:
-      - POSTGRES_USER=compose-postgres
-      - POSTGRES_PASSWORD=compose-postgres
+      - POSTGRES_DB=speakbuddy
+      - POSTGRES_USER=user-postgres
+      - POSTGRES_PASSWORD=postgres-password-dummy
+    #    volumes:
+    #      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
