@@ -6,7 +6,6 @@
 
 Maximum files to post is 20MB, can be changed on `application.properties` file.
 Accept only wav/aiff file for bot POST and GET.
-I'm not using any external webserver (nginx etc).
 I'm not using external storage for audio files.
 User generated via uuid string, but predefined user-id is `uuid-0012` can be used to test phrase API endpoint.
 
@@ -26,7 +25,19 @@ Run db+app using docker compose using
 docker-compose up
 ```
 
-### TODO
+Database connection is exposed to host machine, can be accessed via terminal and using password stated in `docker-compose.yml` file
+
+```bash
+psql -h localhost -d speakbuddy -U user-postgres -p 5433  
+```
+
+Tear everything
+
+```bash
+docker-compose down
+```
+
+### What can be improved
 Find out howto simplify audio converter so it become more modular
 
 Cleaning out temp files. If we don't use any storage with lifecycle control,

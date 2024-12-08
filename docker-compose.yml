@@ -21,7 +21,5 @@ services:
       - POSTGRES_DB=speakbuddy
       - POSTGRES_USER=user-postgres
       - POSTGRES_PASSWORD=postgres-password-dummy
-    #    volumes:
-    #      - pgdata:/var/lib/postgresql/data
     ports:
       - "5433:5432"
