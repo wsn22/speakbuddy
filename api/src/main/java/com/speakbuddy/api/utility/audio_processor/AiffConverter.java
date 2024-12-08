@@ -29,7 +29,7 @@ public class AiffConverter implements AudioProcessor {
     try (AudioInputStream originalStream = AudioSystem.getAudioInputStream(file)) {
       originalStream.reset();
       if (outputFile != null) {
-        AudioSystem.write(originalStream, AudioFileFormat.Type.WAVE, outputFile);
+        AudioSystem.write(originalStream, AudioFileFormat.Type.AIFF, outputFile);
       } else if (outputStream != null) {
         AudioSystem.write(originalStream, AudioFileFormat.Type.AIFF, outputStream);
         outputStream.flush();

@@ -39,7 +39,7 @@ public class WavConverter implements AudioProcessor {
 
     try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file);
          AudioInputStream convertedAudioStream = AudioSystem.getAudioInputStream(targetFormat, audioInputStream)) {
-      AudioFormat sourceFormat = audioInputStream.getFormat();
+      final AudioFormat sourceFormat = audioInputStream.getFormat();
       log.info("isConversionSupported: {}", isConversionSupported(targetFormat, sourceFormat));
 
       if (outputFile != null) {

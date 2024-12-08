@@ -49,7 +49,7 @@ public class LocalFileProcessor implements FileUtility {
 
   @Override
   public void deleteFile(String filePath) {
-    final File targetFile = Paths.get("..", filePath).normalize().toAbsolutePath().toFile();
+    final File targetFile = Paths.get(filePath).toFile();
 
     if (!targetFile.exists()) {
       throw new EntityNotFoundException("File not found");
