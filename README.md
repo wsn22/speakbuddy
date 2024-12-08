@@ -7,7 +7,10 @@
 Maximum files to post is 20MB, can be changed on `application.properties` file.
 Accept only wav/aiff file for bot POST and GET.
 I'm not using external storage for audio files.
-User generated via uuid string, but predefined user-id is `uuid-0012` can be used to test phrase API endpoint.
+
+There's endpoint for create new user, but predefined user-id is `uuid-0012` can be used to test phrase API endpoint.
+
+I'm using audio test file to build this app. Included in folder `test-file`
 
 ## How to run
 
